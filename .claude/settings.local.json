@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter create .)",
+      "Bash(flutter pub get)",
+      "Bash(flutter analyze)",
+      "Bash(flutter run -d windows)",
+      "Bash(flutter run -d chrome)",
+      "Bash(curl -s http://localhost:26627/api/v1/health)",
+      "Bash(npx --prefix c:/Users/JSK/Desktop/apps/backend pm2 list)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :26627)",
+      "Bash(curl -s -X POST http://localhost:26627/api/v1/auth/login -H \"Content-Type: application/json\" -H \"Origin: http://localhost:50065\" -d '{\"\"email\"\":\"\"admin@company.com\"\",\"\"password\"\":\"\"Admin@123\"\"}')",
+      "Bash(findstr LISTENING)",
+      "Bash(taskkill /PID 3688 /F)",
+      "Bash(cmd /c \"taskkill /PID 3688 /F\")",
+      "Bash(cmd /c \"netstat -ano | findstr :26627 | findstr LISTENING\")",
+      "Bash(cmd /c \"npx pm2 start src/server.js --name task-manager\")",
+      "Bash(cmd /c \"npx pm2 delete all && npx pm2 start src/server.js --name task-manager\")",
+      "Bash(cmd /c \"cd c:\\\\Users\\\\JSK\\\\Desktop\\\\apps\\\\backend && npx pm2 list\")",
+      "Bash(cmd /c \"start /b \"\"\"\" node \"\"c:\\\\Users\\\\JSK\\\\Desktop\\\\apps\\\\backend\\\\src\\\\server.js\"\"\")",
+      "Bash(curl -sv -X POST http://localhost:26627/api/v1/auth/login -H \"Content-Type: application/json\" -H \"Origin: http://localhost:50065\" -d '{\"\"email\"\":\"\"admin@company.com\"\",\"\"password\"\":\"\"Admin@123\"\"}')",
+      "Bash(curl -s -X POST http://localhost:26627/api/v1/auth/login -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"admin@company.com\"\",\"\"password\"\":\"\"Admin@123\"\"}')",
+      "Bash(curl -s \"http://localhost:26627/api/v1/tasks/stats/overview\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkBjb21wYW55LmNvbSIsInJvbGUiOiJzdXBlcmFkbWluIiwiY29tcGFueV9pZCI6MSwiaWF0IjoxNzcyMzc2NjMxLCJleHAiOjE3NzI0MTk4MzF9.CkQrFfcSxLjTMQIttIPvgbfs_tkYyDbz2FkO-YiTCLM\")",
+      "Bash(cmd /c \"for /f \"\"tokens=5\"\" %a in \\(''netstat -ano ^| findstr :26627 ^| findstr LISTENING''\\) do echo %a\")"
+    ]
+  }
+}

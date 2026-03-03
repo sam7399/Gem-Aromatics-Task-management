@@ -1,0 +1,62 @@
+{
+  "name": "task-manager-backend",
+  "version": "1.0.0",
+  "description": "Multi-Company Task Management Backend API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "start:prod": "pm2 start pm2/ecosystem.config.js --env production",
+    "dev": "nodemon src/server.js",
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo",
+    "db:seed": "node scripts/seed.sql.js",
+    "seed:admin": "node scripts/seed_admin.js",
+    "test": "jest --coverage --detectOpenHandles",
+    "test:watch": "jest --watch",
+    "lint": "eslint src/**/*.js",
+    "format": "prettier --write \"src/**/*.js\""
+  },
+  "keywords": [
+    "task-management",
+    "multi-company",
+    "rbac",
+    "express",
+    "sequelize"
+  ],
+  "author": "Gem Aromatics",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "celebrate": "^15.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.2.0",
+    "fast-csv": "^5.0.1",
+    "helmet": "^7.1.0",
+    "joi": "^17.13.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.9.7",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^8.0.1",
+    "sequelize": "^6.37.3",
+    "winston": "^3.13.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "xlsx": "^0.18.5",
+    "xss-clean": "^0.1.4"
+  },
+  "devDependencies": {
+    "eslint": "^10.0.1",
+    "jest": "^25.0.0",
+    "nodemon": "^3.1.0",
+    "prettier": "^3.2.5",
+    "sequelize-cli": "^6.6.2",
+    "supertest": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
