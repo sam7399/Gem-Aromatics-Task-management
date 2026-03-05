@@ -9,19 +9,43 @@ class RBACService {
    * Get user's accessible user IDs based on role
    */
   static async getAccessibleUserIds(user) {
-    // Superadmin sees everyone across all companies
-    if (user.role === 'superadmin') {
-      const allUsers = await User.findAll({ attributes: ['id'] });
-      return allUsers.map(u => u.id);
-    }
+    switch (user.role) {
+      case 'superadmin':
+        // Superadmin can see all users
+        const allUsers = await User.findAll({ attributes: ['id'] });
+        return allUsers.map(u => u.id);
 
-    // All other roles see everyone in their company — open workflow
-    if (!user.company_id) return [user.id];
-    const companyUsers = await User.findAll({
-      where: { company_id: user.company_id },
-      attributes: ['id']
-    });
-    return companyUsers.map(u => u.id);
+      case 'management':
+        // Management can see all users in their company
+        if (!user.company_id) return [user.id];
+        const companyUsers = await User.findAll({
+          where: { company_id: user.company_id },
+          attributes: ['id']
+        });
+        return companyUsers.map(u => u.id);
+
+      case 'department_head':
+        // Department head can see users in their department
+        if (!user.department_id) return [user.id];
+        const deptUsers = await User.findAll({
+          where: { department_id: user.department_id },
+          attributes: ['id']
+        });
+        return deptUsers.map(u => u.id);
+
+      case 'manager':
+        // Manager can see their team members + self
+        const teamMembers = await User.findAll({
+          where: { manager_id: user.id },
+          attributes: ['id']
+        });
+        return [user.id, ...teamMembers.map(u => u.id)];
+
+      case 'employee':
+      default:
+        // Employee can only see self
+        return [user.id];
+    }
   }
 
   /**
@@ -61,16 +85,28 @@ class RBACService {
    * Check if user can edit task
    */
   static async canEditTask(user, task) {
-    if (user.role === 'superadmin') return true;
-    // Any user in the same company can edit tasks they created or are assigned to
-    if (task.company_id === user.company_id) {
+    // Superadmin and management can edit any task in their scope
+    if (['superadmin', 'management'].includes(user.role)) {
+      if (user.role === 'superadmin') return true;
+      return task.company_id === user.company_id;
+    }
+
+    // Department head can edit tasks in their department
+    if (user.role === 'department_head') {
+      return task.department_id === user.department_id;
+    }
+
+    // Manager can edit tasks for their team
+    if (user.role === 'manager') {
+      const accessibleUserIds = await this.getAccessibleUserIds(user);
       return (
-        task.created_by_user_id === user.id ||
-        task.assigned_to_user_id === user.id ||
-        ['management'].includes(user.role)
+        accessibleUserIds.includes(task.created_by_user_id) ||
+        accessibleUserIds.includes(task.assigned_to_user_id)
       );
     }
-    return false;
+
+    // Employee can edit their own tasks
+    return task.assigned_to_user_id === user.id || task.created_by_user_id === user.id;
   }
 
   /**
