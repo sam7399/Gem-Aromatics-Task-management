@@ -38,15 +38,14 @@ router.get(
   userController.getPerformance
 );
 
-// List users (management and superadmin only)
+// List users — all authenticated users (needed for task assignment dropdown)
 router.get(
   '/',
-  requireRole('superadmin', 'management'),
   celebrate({
     [Segments.QUERY]: Joi.object({
       page: Joi.number().integer().min(1).default(1),
       limit: Joi.number().integer().min(1).max(500).default(20),
-      role: Joi.string().valid('superadmin', 'management', 'employee'),
+      role: Joi.string().valid('superadmin', 'management', 'department_head', 'manager', 'employee'),
       department_id: Joi.number().integer(),
       location_id: Joi.number().integer(),
       is_active: Joi.boolean(),
