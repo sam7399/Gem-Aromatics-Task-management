@@ -98,15 +98,33 @@ class TaskService {
       ];
     }
 
-    // Query tasks
-    const { count, rows: tasks } = await Task.findAndCountAll({
-      where,
-      include: TASK_INCLUDES,
-      order: [[sort_by, sort_order.toUpperCase()]],
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-      distinct: true
-    });
+    // Base includes that don't depend on new tables
+    const SAFE_INCLUDES = TASK_INCLUDES.filter(
+      i => i.as !== 'collaborators' && i.as !== 'dependencies'
+    );
+
+    // Query tasks — try full includes first, fall back to safe includes
+    let count, tasks;
+    try {
+      ({ count, rows: tasks } = await Task.findAndCountAll({
+        where,
+        include: TASK_INCLUDES,
+        order: [[sort_by, sort_order.toUpperCase()]],
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        distinct: true
+      }));
+    } catch (err) {
+      logger.warn('listTasks full includes failed, using safe includes:', err.message);
+      ({ count, rows: tasks } = await Task.findAndCountAll({
+        where,
+        include: SAFE_INCLUDES,
+        order: [[sort_by, sort_order.toUpperCase()]],
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        distinct: true
+      }));
+    }
 
     // Apply privacy masking and collaborator visibility
     const processedTasks = tasks.map(t => {
@@ -225,26 +243,40 @@ class TaskService {
     const dependsOnId = taskData.depends_on_task_id || null;
     delete taskData.depends_on_task_id;
 
-    // Create task
-    const task = await Task.create({
+    // Build create payload — omit show_collaborators if it might not exist yet
+    const createPayload = {
       ...taskData,
-      assigned_to_user_id: taskData.assigned_to,
-      show_collaborators: taskData.show_collaborators !== false
-    });
+      assigned_to_user_id: taskData.assigned_to
+    };
+    // Only set show_collaborators if it's defined (migration may not have run yet)
+    if (taskData.show_collaborators !== undefined) {
+      createPayload.show_collaborators = taskData.show_collaborators !== false;
+    }
 
-    // Create TaskAssignment entries (primary + extras)
+    // Create task
+    const task = await Task.create(createPayload);
+
+    // Create TaskAssignment entries — wrapped in try/catch in case table doesn't exist yet
     const allAssigneeIds = [assignee.id, ...extraAssigneeIds];
     const uniqueIds = [...new Set(allAssigneeIds)];
-    await TaskAssignment.bulkCreate(
-      uniqueIds.map(uid => ({ task_id: task.id, user_id: uid })),
-      { ignoreDuplicates: true }
-    );
+    try {
+      await TaskAssignment.bulkCreate(
+        uniqueIds.map(uid => ({ task_id: task.id, user_id: uid })),
+        { ignoreDuplicates: true }
+      );
+    } catch (err) {
+      logger.warn('TaskAssignment create skipped:', err.message);
+    }
 
     // Create dependency if specified
     if (dependsOnId) {
-      const depTask = await Task.findByPk(dependsOnId);
-      if (depTask) {
-        await TaskDependency.create({ task_id: task.id, depends_on_task_id: dependsOnId });
+      try {
+        const depTask = await Task.findByPk(dependsOnId);
+        if (depTask) {
+          await TaskDependency.create({ task_id: task.id, depends_on_task_id: dependsOnId });
+        }
+      } catch (err) {
+        logger.warn('TaskDependency create skipped:', err.message);
       }
     }
 
@@ -258,7 +290,13 @@ class TaskService {
       details: `Task created and assigned to ${assigneeNames}`
     });
 
-    await task.reload({ include: TASK_INCLUDES });
+    // Reload with full includes; fall back to basic reload if new tables don't exist yet
+    try {
+      await task.reload({ include: TASK_INCLUDES });
+    } catch (err) {
+      logger.warn('Full task reload failed, using basic reload:', err.message);
+      await task.reload();
+    }
 
     // Send emails to all assignees (non-blocking)
     for (const uid of uniqueIds) {

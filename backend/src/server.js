@@ -14,9 +14,8 @@ sequelize.authenticate()
   .then(async () => {
     logger.info('Database connection established successfully');
 
-    // Auto-run migrations on startup
-    if (config.nodeEnv === 'production') {
-      try {
+    // Auto-run migrations on startup (all environments)
+    try {
         const umzug = new Umzug({
           migrations: {
             glob: path.join(__dirname, 'migrations/*.js'),
@@ -35,9 +34,8 @@ sequelize.authenticate()
           await umzug.up();
           logger.info('Migrations complete');
         }
-      } catch (err) {
-        logger.error('Migration error:', err.message);
-      }
+    } catch (err) {
+      logger.error('Migration error:', err.message);
     }
   })
   .catch(err => {
